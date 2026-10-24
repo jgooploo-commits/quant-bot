@@ -1,19 +1,20 @@
-name: Weekly S&P 500 Scanner
+name: Monthly S&P 500 Quant Scanner (P1)
 
 on:
   schedule:
-    # รันทุกวันศุกร์ เวลา 23:00 UTC (ซึ่งตรงกับ เช้าวันเสาร์ 06:00 น. เวลาประเทศไทย)
-    - cron: '0 23 * * 5'
-  workflow_dispatch: # ทำให้เรามีปุ่มกดสั่งรันเองได้ตลอดเวลา
+    # รันวันสุดท้ายของทุกเดือน เวลา 23:30 UTC (06:30 เช้า เวลาไทย)
+    - cron: '30 23 28-31 * *'
+  workflow_dispatch:   # กดรันเองได้ตลอดเวลา
 
 jobs:
   run-scanner:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -23,9 +24,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install yfinance pandas numpy requests lxml html5lib
 
-      - name: Run Quant Scanner
+      - name: Run P1 Quant Scanner
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python main.py
+
+      - name: Upload Log (เก็บไว้ 7 วัน)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scanner-log-${{ github.run_number }}
+          path: quant_pipeline.log
+          retention-days: 7
