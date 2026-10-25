@@ -2,9 +2,10 @@ name: Monthly S&P 500 Quant Scanner (P1)
 
 on:
   schedule:
-    # รันวันสุดท้ายของทุกเดือน เวลา 23:30 UTC (06:30 เช้า เวลาไทย)
-    - cron: '30 23 28-31 * *'
-  workflow_dispatch:   # กดรันเองได้ตลอดเวลา
+    # รันทุกวันที่ 1 ของเดือน เวลา 00:30 UTC (07:30 เช้า เวลาไทย)
+    # BME = Business Month End → ดีกว่ากำหนดวันที่ 28-31 (ไม่ครบทุกเดือน)
+    - cron: '30 0 1 * *'
+  workflow_dispatch:   # กดรันเองได้ตลอดเวลา (สำหรับทดสอบ)
 
 jobs:
   run-scanner:
@@ -22,7 +23,14 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas numpy requests lxml html5lib
+          pip install \
+            yfinance \
+            pandas \
+            numpy \
+            requests \
+            lxml \
+            html5lib \
+            beautifulsoup4
 
       - name: Run P1 Quant Scanner
         env:
@@ -31,10 +39,12 @@ jobs:
         run: |
           python main.py
 
-      - name: Upload Log (เก็บไว้ 7 วัน)
-        if: always()
+      - name: Upload Log
+        if: always()   # อัปโหลด log ไม่ว่า success หรือ fail
         uses: actions/upload-artifact@v4
         with:
           name: scanner-log-${{ github.run_number }}
-          path: quant_pipeline.log
-          retention-days: 7
+          path: |
+            quant_pipeline.log
+          if-no-files-found: ignore   # ไม่ error ถ้าไม่มี log file
+          retention-days: 14
